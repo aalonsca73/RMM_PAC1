@@ -1,0 +1,31 @@
+---
+title: "Regresión, modelos y métodos: Prueba de evaluación continua 1"
+author: "Aràntzazu Alonso Carrasco"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejercicio 1
+
+**Un grupo de científicos norteamericanos están interesados en encontrar un hábitat adecuado para reintroducir una especie rara de escarabajos tigre, llamada *cicindela dorsalis dorsalis*, los cuales viven en playas de arena de la costa del Atlántico Norte. Se muestrearon 12 playas y se midió la densidad de estos escarabajos tigre. Adicionalmente se midieron una serie de factores bióticos y abióticos tales como la exposición a las olas, tamaño de la partícula de arena, pendiente de la playa y densidad de los anfípodos depredadores.**
+
+**Los datos se hallan en la hoja de cálculo `cicindela.xlsx`.**
+
+(a) **Ajustar un modelo de regresión lineal múltiple que estime todos los coeficientes de regresión parciales referentes a todas las variables regresoras y el intercepto.**
+
+```{r echo=FALSE, warning=FALSE,message=FALSE}
+library("readxl")
+cici<-read_excel("cicindela.xlsx")
+cici.lm<-lm(BeetleDensity~.,data=cici)
+summary(cici.lm)
+```
+
+
+**¿Es significativo el modelo obtenido? ¿Qué test estadístico se emplea para contestar a esta pregunta? Plantear la hipótesis nula y la alternativa del test.**
+
+**¿Qué variables han salido significativas para un nivel de significación $\alpha = 0.10$?**
+
