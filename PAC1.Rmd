@@ -2,6 +2,7 @@
 title: "Regresión, modelos y métodos: Prueba de evaluación continua 1"
 author: "Aràntzazu Alonso Carrasco"
 date: "`r Sys.Date()`"
+lang: es
 output: pdf_document
 ---
 
@@ -17,15 +18,110 @@ knitr::opts_chunk$set(echo = TRUE)
 
 (a) **Ajustar un modelo de regresión lineal múltiple que estime todos los coeficientes de regresión parciales referentes a todas las variables regresoras y el intercepto.**
 
+Dado que estamos interesados en ver cómo se relaciona la densidad de escarabajos tigre con el resto de factores ambientales que se tienen en consideración, el modelo de regresión lineal a considerar debe tener la densidad de escarabajos (`BeetleDensity`) como variable respuesta y el resto de factores ambientales como variables regresoras. La ecuación del modelo será:
+
+$$y_i=\beta_0+\beta_{1}x_{i1}+\beta_{2}x_{i2}+\beta_{3}x_{3i}+\beta_{4}x_{4i}+\epsilon_i$$
+
+siendo 1, 2, 3 y 4 los números que denominan las variables `Wave exposure`, `Sandparticlesize`, `Beach steepness` y `AmphipodDensity`, respectivamente. 
+
+Los coeficientes de regresión parciales se muestran a continuación (para ver el modelo completo, ver el apéndice):
+
 ```{r echo=FALSE, warning=FALSE,message=FALSE}
 library("readxl")
+library("faraway")
 cici<-read_excel("cicindela.xlsx")
 cici.lm<-lm(BeetleDensity~.,data=cici)
-summary(cici.lm)
+sum.cici.lm<-summary(cici.lm)
+f<-summary(cici.lm)$fstatistic
+sum.cici.lm$coefficients
 ```
-
 
 **¿Es significativo el modelo obtenido? ¿Qué test estadístico se emplea para contestar a esta pregunta? Plantear la hipótesis nula y la alternativa del test.**
 
+El modelo obtenido es significativo (al 5%), ya que el *p*-valor= `r pf(f[1],f[2],f[3],lower.tail=F)`. Para contestar a esta pregunta se usa un test *F* que se sitúa en la última fila del resumen del modelo que acabamos de ajustar. Concretamente, la hipótesis nula es 
+
+$$H_0:\beta_{1}=\beta_{2}=\beta_{3}=\beta_{4}=0$$
+
+mientras que la hipótesis alternativa es 
+
+$$H_1:\beta_i\neq0 \;\text{para algún} \;i=1,...,4$$
+
+Por tanto, dado que hemos rechazado la hipótesis nula, aceptamos que al menos uno de los coeficientes de regresión es distinto de cero. 
+
 **¿Qué variables han salido significativas para un nivel de significación $\alpha = 0.10$?**
+
+Para un nivel de significación $\alpha = 0.10$, las variables que han salido significativas son `Sandparticlesize`, que presenta un *p*-valor de `r round(sum.cici.lm$coefficients[3,4],3)`, y `AmphipodDensity`, con un *p*-valor de `r round(sum.cici.lm$coefficients[5,4],3)`.
+
+(b) **Calcular los intervalos de confianza al 90 y 95 % para el parámetro que acompaña a la variable `AmphipodDensity`. Utilizando sólo estos intervalos, ¿qué podríamos haber deducido sobre el *p*-valor para la densidad de los anfípodos depredadores en el resumen del modelo de regresión? ¿Qué interpretación práctica tiene este parámetro $\beta_4$?**
+
+El intervalo de confianza al 90% es (`r confint(cici.lm,level=0.9)[5,]`), mientras que el intervalo de confianza al 95% es (`r confint(cici.lm,level=0.95)[5,]`). Dado que el intervalo de confianza al 95% incluye el cero pero el del 90% no, podíamos haber deducido que el parámetro de `AmphipodDensity` es significativamente diferente de cero para una significación del 10% pero no para una significación del 5%. Y, de hecho, es exactamente la misma conclusión que extraemos de mirar el *p*-valor = `r round(sum.cici.lm$coefficients[5,4],3)`.
+
+El parámetro correspondiente al predictor `AmphipodDensity` es `r round(sum.cici.lm$coefficients[5],4)`. Esto quiere decir que por cada unidad de aumento de la densidad de los anfípodos depredadores, la densidad de los escarabajos tigre disminuirá en `r round(sum.cici.lm$coefficients[5],4)` unidades.
+
+(c) **Estudiar la posible multicolinealidad del modelo con todas las regresoras calculando los VIFs.**
+
+Para estudiar la multicolinealidad en un modelo de regresión lineal múltiple se utiliza el factor de inflación de la varianza (VIF, *variance inflation factor*). Un $\text{VIF}=1$ indica que no hay multicolinealidad entre la variable predictora y las demás variables predictoras del modelo. Cuanto mayor sea el VIF, mayor será la inflación de la varianza y, por tanto, mayor será el grado de multicolinealidad. En general, se acepta que un $\text{VIF}\geq5$ indica una multicolinealidad significativa. 
+
+Los valores de VIF del modelo son los que se muestran a continuación:
+
+```{r, echo=FALSE}
+vif(cici.lm)
+```
+
+Como podemos ver, el VIF para la variable `AmphipodDensity` es `r round(vif(cici.lm)[4],2)`. Por tanto, vemos que hay un problema de multicolinealidad con esta variable, hecho que puede afectar a la interpretación de los coeficientes de regresión y a la precisión de las predicciones .
+
+(d) **Considerar el modelo más reducido que no incluye las variables exposición a las olas y la pendiente de la playa y decidir si nos podemos quedar con este modelo reducido mediante un contraste de modelos con el test F para un $\alpha = 0.05$. Escribir en forma paramétrica las hipótesis $H_0$ y $H_1$ de este contraste. Comparar el ajuste de ambos modelos.**
+
+```{r, echo=FALSE}
+cici.lm.i<-lm(BeetleDensity~Sandparticlesize+AmphipodDensity,data=cici)
+```
+
+
+Consideramos el modelo siguiente:
+
+$$y_i=\beta_0+\beta_{1}x_{i1}+\beta_{2}x_{i2}+\epsilon_i$$
+
+donde 1 y 2 representan `Sandparticlesize` y `AmphipodDensity`, respectivamente. En este caso, el *p*-valor que obtenemos mediante un contraste de modelos con un test *F* es `r round (anova(cici.lm,cici.lm.i)$"Pr(>F)"[2], 2)`. Con este *p*-valor aceptamos la hipótesis nula de que los parámetros de las variables no incluídas en el modelo simple son cero. Por tanto, la simplificación es perfectamente justificable.
+
+\pagebreak
+
+# Apéndice
+
+En este apéndice se muestra todo el código que se ha ido empleando en la resolución de los ejercicios.
+
+## Ejercicio 1
+
+```{r}
+# Cargamos los paquetes necesarios
+library("readxl")
+library("faraway")
+# Creamos un dataset a partir de los datos del fichero cicindela.xlsx
+cici<-read_excel("cicindela.xlsx")
+# Ajustamos la regresión lineal múltiple con la función lm()
+cici.lm<-lm(BeetleDensity~.,data=cici)
+# Guardamos el summary del modelo 
+sum.cici.lm<-summary(cici.lm)
+sum.cici.lm
+# Obtenemos el estadístico f
+f<-summary(cici.lm)$fstatistic
+# Imprimimos los coeficientes del modelo
+sum.cici.lm$coefficients
+# Obtenemos el p-valor del modelo
+pf(f[1],f[2],f[3],lower.tail=F)
+# Extraemos el p-valor de las variables significativas
+round(sum.cici.lm$coefficients[3,4],3) # Sandparticlesize
+round(sum.cici.lm$coefficients[5,4],3) # AmphipodDensity
+# Calculamos los intervalos de confianza de AmphipodDensity
+# al 90%
+confint(cici.lm,level=0.9)[5,]
+# al 95%
+confint(cici.lm,level=0.95)[5,]
+# Extraemos el parámetro de AmphipodDensity
+round(sum.cici.lm$coefficients[5],4)
+# Calculamos los VIF
+vif(cici.lm)
+# Generamos el modelo reducido
+cici.lm.i<-lm(BeetleDensity~Sandparticlesize+AmphipodDensity,data=cici)
+summary(cici.lm.i)
+```
 
