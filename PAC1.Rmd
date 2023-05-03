@@ -91,16 +91,38 @@ $$H_1:\beta_i\neq0 \;\text{para algún} \;i=1,3$$
 
 Para comparar el ajuste de cada uno de los modelos, nos podemos fijar en el coeficiente de determinación $R^2$. El modelo sin simplificar tiene una $R^2$ = `r sum.cici.lm$adj.r.squared`, mientras que el modelo simplificado tiene una $R^2$ = `r sum.cici.lm.i$adj.r.squared`. Como vemos, ambos modelos tienen un ajuste muy parecido y muy cercano a 1, por lo que ambos ajustan bien los datos. Este hecho ya lo podíamos intuir al aceptar la hipótesis nula del contraste anterior ya que, dado que podemos aceptarla, significa que el modelo más simple explica bien los datos. 
 
-(e) **Calcular y dibujar una región de confianza conjunta al 95 % para los parámetros asociados con `Sandparticlesize` y `AmphipodDensity` con el modelo que resulta del apartado anterior.**
+(e) **Calcular y dibujar una región de confianza conjunta al 95 % para los parámetros asociados con `Sandparticlesize` y `AmphipodDensity` con el modelo que resulta del apartado anterior. Dibujar el origen de coordenadas. La ubicación del origen respecto a la región de confianza nos indica el resultado de una determinada prueba de hipótesis. Enunciar dicha prueba y su resultado.**
 
-```{r, echo=FALSE,message=FALSE,warning=FALSE}
+La región de confianza conjunta al 95% para los parámetros asociados con `Sandparticlesize` y `AmphipodDensity` para el modelo simplificado es la siguiente:
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE,out.width="50%",fig.align='center'}
 require(ellipse)
-plot(ellipse(cici.lm.i,c(2,3)),type="l")
+plot(ellipse(cici.lm.i,c(2,3)),type="l",xlim=c(-1,7),ylim=c(-4,1))
 points(coef(cici.lm.i)[2],coef(cici.lm.i)[3])
 points(0,0)
 text(0,0,labels="(0,0)",pos=3)
 ```
 
+La elipse limita la región de confianza conjunta, mientras que el centro de la elipse corresponde a la estimación puntual de los dos parámetros. 
+
+Ver dónde queda el origen respecto a esta región de confianza equivale a hacer el siguiente contraste de hipótesis:
+
+$$H_0:\beta_{Sandparticlesize}=\beta_{AmphipodDensity}=0$$
+$$H_1:\beta_{Sandparticlesize}\neq0 \text{ o }\beta_{AmphipodDensity}\neq0$$
+
+Dado que el punto $(0,0)$ se encuentra fuera de la región de confianza, rechazamos la hipótesis nula y aceptamos la hipótesis alternativa de que al menos un parámetro es significativamente distinto de cero si se considera conjuntamente. 
+
+(f) **Con el modelo reducido del apartado (d), predecir en forma de intervalo de confianza al 95 % la densidad de los escarabajos tigre previsible para una playa cercana a un conocido hotel donde el tamaño de partícula de arena es 5 y la densidad de anfípodos depredadores es 11. Comprobar previamente que los valores observados no suponen una extrapolación.**
+
+```{r,echo=FALSE}
+range_sand<-c(min(cici$Sandparticlesize),max(cici$Sandparticlesize))
+range_amphi<-c(min(cici$AmphipodDensity),max(cici$AmphipodDensity))
+x0<-data.frame(Sandparticlesize=5,AmphipodDensity=11)
+```
+
+Primero, miramos el rango de valores entre los que se mueven el tamaño de la partícula de arena y la densidad de anfípodos depredadores de los datos con los que hemos generado el modelo. Para el tamaño de la partícula de arena es (`r range_sand`). Dado que 5 se encuentra dentro del intervalo, no supone una extrapolación. Para la densidad de anfípodos depredadores es (`r range_amphi`). Como 11 también se encuentra dentro de este rango, tampoco supone una extrapolación. 
+
+Por tanto, podemos usar el modelo reducido para obtener la predicción. El intervalo de confianza al 95% de la densidad de los escarabajos tigre es (`r round(predict(cici.lm.i,x0,interval = "prediction",level=.95)[2:3],2)`).
 
 \pagebreak
 
@@ -142,5 +164,20 @@ vif(cici.lm)
 # Generamos el modelo reducido
 cici.lm.i<-lm(BeetleDensity~Sandparticlesize+AmphipodDensity,data=cici)
 summary(cici.lm.i)
+# Comparamos ambos modelos
+anova(cici.lm,cici.lm.i)
+# Generamos la región de confianza de Sandparticlesize y AmphipodDensity
+require(ellipse)
+plot(ellipse(cici.lm.i,c(2,3)),type="l",xlim=c(-1,7),ylim=c(-4,1))
+points(coef(cici.lm.i)[2],coef(cici.lm.i)[3])
+# Añadimos el origen
+points(0,0)
+text(0,0,labels="(0,0)",pos=3)
+# Comprobamos si es una extrapolación
+range_sand<-c(min(cici$Sandparticlesize),max(cici$Sandparticlesize))
+range_amphi<-c(min(cici$AmphipodDensity),max(cici$AmphipodDensity))
+print(c(range_sand,range_amphi))
+x0<-data.frame(Sandparticlesize=5,AmphipodDensity=11)
+predict(cici.lm.i,x0,interval = "prediction",level=.95)
 ```
 
