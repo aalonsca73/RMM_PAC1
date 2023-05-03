@@ -74,14 +74,33 @@ Como podemos ver, el VIF para la variable `AmphipodDensity` es `r round(vif(cici
 
 ```{r, echo=FALSE}
 cici.lm.i<-lm(BeetleDensity~Sandparticlesize+AmphipodDensity,data=cici)
+sum.cici.lm.i<-summary(cici.lm.i)
 ```
 
 
 Consideramos el modelo siguiente:
 
-$$y_i=\beta_0+\beta_{1}x_{i1}+\beta_{2}x_{i2}+\epsilon_i$$
+$$y_i=\beta_0+\beta_{2}x_{i2}+\beta_{4}x_{i4}+\epsilon_i$$
 
-donde 1 y 2 representan `Sandparticlesize` y `AmphipodDensity`, respectivamente. En este caso, el *p*-valor que obtenemos mediante un contraste de modelos con un test *F* es `r round (anova(cici.lm,cici.lm.i)$"Pr(>F)"[2], 2)`. Con este *p*-valor aceptamos la hipótesis nula de que los parámetros de las variables no incluídas en el modelo simple son cero. Por tanto, la simplificación es perfectamente justificable.
+donde 2 y 4 representan `Sandparticlesize` y `AmphipodDensity`, respectivamente. En este caso, el *p*-valor que obtenemos mediante un contraste de modelos con un test *F* es `r round (anova(cici.lm,cici.lm.i)$"Pr(>F)"[2], 2)`. Con este *p*-valor aceptamos la hipótesis nula de que los parámetros de las variables no incluídas en el modelo simple son cero. Por tanto, la simplificación es perfectamente justificable. 
+
+Las hipótesis escritas en forma paramétrica son las siguientes:
+
+$$H_0:\beta_1=\beta_3=0$$
+$$H_1:\beta_i\neq0 \;\text{para algún} \;i=1,3$$
+
+Para comparar el ajuste de cada uno de los modelos, nos podemos fijar en el coeficiente de determinación $R^2$. El modelo sin simplificar tiene una $R^2$ = `r sum.cici.lm$adj.r.squared`, mientras que el modelo simplificado tiene una $R^2$ = `r sum.cici.lm.i$adj.r.squared`. Como vemos, ambos modelos tienen un ajuste muy parecido y muy cercano a 1, por lo que ambos ajustan bien los datos. Este hecho ya lo podíamos intuir al aceptar la hipótesis nula del contraste anterior ya que, dado que podemos aceptarla, significa que el modelo más simple explica bien los datos. 
+
+(e) **Calcular y dibujar una región de confianza conjunta al 95 % para los parámetros asociados con `Sandparticlesize` y `AmphipodDensity` con el modelo que resulta del apartado anterior.**
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+require(ellipse)
+plot(ellipse(cici.lm.i,c(2,3)),type="l")
+points(coef(cici.lm.i)[2],coef(cici.lm.i)[3])
+points(0,0)
+text(0,0,labels="(0,0)",pos=3)
+```
+
 
 \pagebreak
 
