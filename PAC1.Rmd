@@ -170,9 +170,30 @@ summary(female.lm)
 plot(prop.black~age,data=lions)
 abline(male.lm,lty=1)
 abline(female.lm,lty=2)
-
 ```
 
+
+```{r}
+attach(lions)
+n1<-sum(sex=="F")
+n2<-sum(sex=="M")
+y<-c(prop.black[sex=="F"],prop.black[sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
+female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.lm)
+general.lm<-lm(y~0+x)
+model.matrix(general.lm)[c(1:5,101:105), ]
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+```
 
 
 
