@@ -124,6 +124,59 @@ Primero, miramos el rango de valores entre los que se mueven el tamaño de la pa
 
 Por tanto, podemos usar el modelo reducido para obtener la predicción. El intervalo de confianza al 95% de la densidad de los escarabajos tigre es (`r round(predict(cici.lm.i,x0,interval = "prediction",level=.95)[2:3],2)`).
 
+# Ejercicio 2
+
+**En el trabajo de Whitman et al. (2004) se estudia, entre otras cosas, la relación entre la edad de los leones y la proporción oscura en la coloración de sus narices. En el archivo `lions.csv` disponemos de los datos de 105 leones machos y hembras de dos áreas de Tanzania, el parque nacional de Serengueti y el cráter del Ngorongoro, entre 1999 y 2002. Las variables registradas son la edad conocida de cada animal y la proporción oscura de su nariz a partir de fotografías tratadas digitalmente.**
+
+**En la figura 1 se reproduce el gráfico de dispersión de la figura 4 del artículo con el cambio de coloración de la nariz según la edad de machos y hembras en las dos poblaciones separadas.**
+
+***Nota*: Los datos se han extraído principalmente del gráfico del artículo de Whitman et al. (2004) y por lo tanto son aproximados. Algunos paquetes de R contienen un *data.frame* con una parte de estos datos. Por ejemplo `LionNoses` del paquete `abd` contiene los datos de todos los machos. En consecuencia, los resultados numéricos de vuestro análisis pueden ser ligeramente distintos a los del trabajo original.**
+
+(a) **Reproducir el gráfico de dispersión de la figura 1 (figura 4d del artículo) lo más fielmente posible al original, ya que se trata de una exigencia de los editores de la revista.**
+
+La representación del gráfico es la siguiente:
+
+```{r,echo=FALSE,out.width="50%",fig.align='center'}
+lions<-read.csv("lions.csv")
+plot(lions$prop.black ~ lions$age, 
+     pch = ifelse(lions$sex == "F", ifelse(lions$area == "S", 21, 1), 
+                  ifelse(lions$area == "S", 24, 2)), 
+     col = ifelse(lions$area == "S", "black", "black"),
+     bg = ifelse(lions$area == "S", "black", "white"),
+     data = lions, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti females (n=62)", 
+                  "Serengeti males (n=22)",
+                  "Ngorongoro females (n=11)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(21,24,1,2), 
+       pt.bg = c("black","black","white", "white"), 
+       bty = "n")
+
+```
+
+(b) **En el artículo se destacan los siguientes resultados: *After controlling for age, there was no effect of sex on nose colour in the Serengeti, but Ngorongoro males had lighter noses than Ngorongoro females.* Ajustar un primer modelo sin considerar la posible interacción entre el sexo y las áreas y contrastar si el sexo es significativo en el modelo así ajustado y en los modelos separados según el área.**
+
+```{r}
+male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
+female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
+summary(male.lm)
+summary(female.lm)
+plot(prop.black~age,data=lions)
+abline(male.lm,lty=1)
+abline(female.lm,lty=2)
+
+```
+
+
+
+
+
 \pagebreak
 
 # Apéndice
@@ -179,5 +232,34 @@ range_amphi<-c(min(cici$AmphipodDensity),max(cici$AmphipodDensity))
 print(c(range_sand,range_amphi))
 x0<-data.frame(Sandparticlesize=5,AmphipodDensity=11)
 predict(cici.lm.i,x0,interval = "prediction",level=.95)
+```
+
+## Ejercicio 2
+
+```{r}
+# Cargamos los datos
+lions<-read.csv("lions.csv")
+# Generamos el gráfico
+plot(lions$prop.black ~ lions$age, 
+     pch = ifelse(lions$sex == "F", ifelse(lions$area == "S", 21, 1), 
+                  ifelse(lions$area == "S", 24, 2)), 
+     col = ifelse(lions$area == "S", "black", "black"),
+     bg = ifelse(lions$area == "S", "black", "white"),
+     data = lions, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti females (n=62)", 
+                  "Serengeti males (n=22)",
+                  "Ngorongoro females (n=11)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(21,24,1,2), 
+       pt.bg = c("black","black","white", "white"), 
+       bty = "n")
+
+
 ```
 
