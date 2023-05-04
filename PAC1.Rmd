@@ -525,7 +525,7 @@ $$Var(age)=Var(\beta_0+\text{arcsin}(prop.black)\beta_1)$$
 
 # Ejercicio 3
 
-(a) **Verificar las hipótesis de Gauss-Markov y la normalidad de los residuos del modelo completo del apartado (b) del ejercicio 2. Realizar una completa diagnosis del modelo para ver si se cumplen las condiciones del modelo de regresión: normalidad, homocedasticidad,... y estudiar la presencia de valores atípicos, de alto *leverage* y/o puntos influyentes.**
+(a) **Verificar las hipótesis de Gauss-Markov y la normalidad de los residuos del modelo completo del apartado (b) del ejercicio 2. Realizar una completa diagnosis del modelo para ver si se cumplen las condiciones del modelo de regresión: normalidad, homocedasticidad,... y estudiar la presencia de valores atípicos, de alto *leverage* y/o puntos influyentes. Construir los gráficos correspondientes y justificar su interpretación. ¿Podemos considerar el modelo ajustado como fiable?**
 
 Empezaremos estudiando si la varianza de los errores es constante. Para ello, representamos los valores absolutos de los residuos para ver la magnitud de la varianza:
 
@@ -559,13 +559,12 @@ Aceptamos, por tanto, la hipótesis de normalidad.
 
 A continuación, buscaremos los puntos con alto *leverage*. El valor medio de los *leverages* es $p/n$ (siendo *p* el número de parámetros y *n* el número de observaciones) y como referencia podemos considerar anómalas las observaciones con *leverages* del doble de este valor (representado con una línea horizontal roja en el gráfico). A continuación, mostramos un gráfico donde podemos visualizar si hay valores por encima del umbral que hemos determinado, es decir, si hay valores con elevado *leverage*. Para identificar los valores más grandes, también podemos representar los *leverages* contra los cuantiles de una distribución seminormal (como se muestra a la derecha).
 
-```{r,echo=FALSE,fig.align='center',out.height="50%"}
+```{r,echo=FALSE,fig.align='center'}
 par(mfrow=c(1,2))
 hatv<-hatvalues(general.complete.lm)
 p<-length(general.complete.lm$coefficients)
 n<-length(general.complete.lm$fitted.values)
 leverage.mean<-p/n
-#which(hatv>2*leverage.mean)
 plot(hatv,type="h")
 abline(h=2*leverage.mean,col="red")
 halfnorm(hatv,nlab = 3,ylab="Leverage")
@@ -573,7 +572,33 @@ halfnorm(hatv,nlab = 3,ylab="Leverage")
 
 Como vemos en el gráfico de la izquierda, sí que hay observaciones con un elevado *leverage*. En el gráfico de la derecha podemos ver que la observación del león 103 tiene un *leverage* unusualmente muy elevado, seguido de los leones 61 y 104. 
 
-Seguidamente, buscamos los *outliers* que pueda haber.
+Seguidamente, buscamos los *outliers* que pueda haber. Para ello, usaremos el valor crítico de la *t* de Student y la corrección de Bonferroni para comparaciones múltiples. El número de *outliers* según este criterio es:
+
+```{r,echo=FALSE}
+grlib<-n-p-1
+stud <- rstudent(general.complete.lm)
+which(abs(stud)>abs(qt(0.05/(2*n),grlib)))
+```
+
+Vemos que con este criterio todos los residuos quedan por debajo del valor crítico y no hallamos ningún valor atípico. Queda la duda de si puede haber grupos de valores atípicos que no hayamos sabido encontrar.
+
+Para buscar los valores influyentes, calculamos la distancia de Cook y la representamos contra los cuartiles de una distribución seminormal (gráfico de la izquierda). Posteriormente, podemos generar un gráfico con el criterio de selección (gráfico de la derecha).
+
+```{r,echo=FALSE,fig.align='center'}
+par(mfrow=c(1,2))
+cook <- cooks.distance(general.complete.lm)
+halfnorm(cook,nlab=6,ylab="Distancia de Cook")
+plot(general.complete.lm,which = 4)
+abline(h=4/((n-p-2)),col="red")
+```
+
+Como vemos, los leones 61, 103, 58, 104, 95 y 100 sobrepasan el umbral que hemos establecido.
+
+Con todo, no podemos considerar el modelo ajustado como fiable porque no se cumple la asunción de homocedasticidad. 
+
+(b) **Teniendo en cuenta que la variable respuesta de la regresión del apartado (b) del ejercicio 2 es una proporción, ¿presenta algún problema este modelo? ¿Qué alternativas nos podemos plantear para mejorar el ajuste de los datos?**
+
+
 
 \pagebreak
 
