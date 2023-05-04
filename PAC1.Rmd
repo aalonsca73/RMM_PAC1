@@ -162,18 +162,121 @@ legend("bottomright",
 
 (b) **En el artículo se destacan los siguientes resultados: *After controlling for age, there was no effect of sex on nose colour in the Serengeti, but Ngorongoro males had lighter noses than Ngorongoro females.* Ajustar un primer modelo sin considerar la posible interacción entre el sexo y las áreas y contrastar si el sexo es significativo en el modelo así ajustado y en los modelos separados según el área.**
 
-```{r}
+Primero, podemos representar las rectas correspondientes a machos y hembras sin hacer distinciones según la región (la línea sólida representa los machos y la línea discontinua representa las hembras):
+
+```{r,echo=FALSE,out.width="50%",fig.align='center'}
 male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
 female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
-summary(male.lm)
-summary(female.lm)
-plot(prop.black~age,data=lions)
+plot(lions$prop.black ~ lions$age, 
+     pch = ifelse(lions$sex == "F", ifelse(lions$area == "S", 21, 1), 
+                  ifelse(lions$area == "S", 24, 2)), 
+     col = ifelse(lions$area == "S", "black", "black"),
+     bg = ifelse(lions$area == "S", "black", "white"),
+     data = lions, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti females (n=62)", 
+                  "Serengeti males (n=22)",
+                  "Ngorongoro females (n=11)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(21,24,1,2), 
+       pt.bg = c("black","black","white", "white"), 
+       bty = "n")
+
 abline(male.lm,lty=1)
 abline(female.lm,lty=2)
 ```
 
+Como podemos ver, las rectas parten del mismo lugar, pero las pendientes parecen distintas. Los modelos asociados a cada una de las rectas son:
 
-```{r}
+$$y_{1i}=\alpha_1+\beta_1x_{1i}+\epsilon_{1i}\;i=1,...n_1$$
+$$y_{2i}=\alpha_2+\beta_2x_{2i}+\epsilon_{2i}\;i=1,...n_2$$
+donde los errores $\epsilon_{1i}$ y $\epsilon_{1i}$ verifican todas las hipótesis de un modelo lineal normal. Entonces, se puede plantear el siguiente contraste:
+
+$$H_0:\beta_1=\beta_2$$
+$$H_1:\beta_1\neq\beta_2$$
+Para hacer este contraste, hay que considerar un modelo general único con el siguiente aspecto:
+
+$$
+\begin{pmatrix} 
+y_{11}\\ 
+\vdots \\
+y_{1n_1} \\
+y_{21}\\ 
+\vdots \\
+y_{2n_2} \\
+\end{pmatrix}
+=
+\begin{pmatrix} 
+1 & x_{11} & 0 & 0\\ 
+\vdots & \vdots & \vdots & \vdots \\
+1 & x_{1n_1} & 0 & 0\\
+0 & 0 & 1 & x_{21} \\ 
+\vdots & \vdots & \vdots & \vdots \\
+0 & 0&1 & x_{2n_2} \\
+\end{pmatrix}
+\begin{pmatrix} 
+\alpha_1\\ 
+\beta_1\\
+\alpha_2\\
+\beta_2\\
+\end{pmatrix}
++
+\begin{pmatrix} 
+\epsilon_{11}\\ 
+\vdots \\
+\epsilon_{1n_1} \\
+\epsilon_{21}\\ 
+\vdots \\
+\epsilon_{2n_2} \\
+\end{pmatrix}
+$$
+
+No obstante, si aceptamos la hipótesis nula, el modelo se simplifica de la manera siguiente:
+
+$$
+\begin{pmatrix} 
+y_{11}\\ 
+\vdots \\
+y_{1n_1} \\
+y_{21}\\ 
+\vdots \\
+y_{2n_2} \\
+\end{pmatrix}
+=
+\begin{pmatrix} 
+1 & x_{11} & 0 & 0\\ 
+\vdots & \vdots & \vdots & \vdots \\
+1 & x_{1n_1} & 0 & 0\\
+0 & 0 & 1 & x_{21} \\ 
+\vdots & \vdots & \vdots & \vdots \\
+0 & 0&1 & x_{2n_2} \\
+\end{pmatrix}
+\begin{pmatrix} 
+\alpha_1\\ 
+\alpha_2\\
+\beta\\
+\end{pmatrix}
++
+\begin{pmatrix} 
+\epsilon_{11}\\ 
+\vdots \\
+\epsilon_{1n_1} \\
+\epsilon_{21}\\ 
+\vdots \\
+\epsilon_{2n_2} \\
+\end{pmatrix}
+$$
+
+Es decir, si las rectas son paralelas, las pendientes serán iguales y, por tanto, ambas $\beta$ también serán iguales. 
+
+Tras ajustar ambos modelos, debemos hacer un test *F* para resolver el contraste:
+
+```{r,echo=FALSE}
 attach(lions)
 n1<-sum(sex=="F")
 n2<-sum(sex=="M")
@@ -183,8 +286,33 @@ male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
 female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
 x[1:n1,1:2]<-model.matrix(female.lm)
 x[(n1+1):(n1+n2),3:4]<-model.matrix(male.lm)
+general.complete.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.complete.lm)
+```
+
+Como podemos ver, para un nivel de significación del 5%, aceptamos la hipótesis nula de que ambas rectas tienen la misma pendiente. Por tanto, no vemos diferencias entre los sexos. Cabe destacar, y esto es válido para todos los contrastes posteriores que realicemos, que tras aceptar la hipótesis de paralelismo, debemos estudiar si las hipótesis de Gauss-Markov su cumplen para dar por válidas las conclusiones.
+
+Sin embargo, si tenemos en cuenta el área, debemos hacer el contraste entre machos y hembras para cada una de las regiones. Empecemos, por ejemplo, por Serengeti. Si repetimos el test *F* solo para los leones que forman parte de la región de Serengeti, obtenemos el resultado siguiente:
+
+```{r, echo=FALSE}
+serengeti<-subset(lions,area=="S")
+
+n1<-sum(serengeti$sex=="F")
+n2<-sum(serengeti$sex=="M")
+y<-c(serengeti$prop.black[serengeti$sex=="F"],serengeti$prop.black[serengeti$sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.s.lm<-lm(prop.black~age,data=serengeti,subset = sex=="M")
+female.s.lm<-lm(prop.black~age,data=serengeti,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.s.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.s.lm)
 general.lm<-lm(y~0+x)
-model.matrix(general.lm)[c(1:5,101:105), ]
 
 x0<-matrix(numeric(3*(n1+n2)),ncol=3)
 x0[,1]<-x[,1]
@@ -195,8 +323,257 @@ h0.lm<-lm(y~0+x0)
 anova(h0.lm,general.lm)
 ```
 
+Como podemos ver, aceptamos la hipótesis nula de igualdad de pendientes. Por tanto, asumimos que no hay diferencias significativas entre la proporción de negro en la nariz de leones y leonas de la región de Serengeti. 
 
+Ahora, procedemos a repetir el contraste para Ngorongoro:
 
+```{r, echo=FALSE}
+ngoro<-subset(lions,area=="N")
+
+n1<-sum(ngoro$sex=="F")
+n2<-sum(ngoro$sex=="M")
+y<-c(ngoro$prop.black[ngoro$sex=="F"],ngoro$prop.black[ngoro$sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.n.lm<-lm(prop.black~age,data=ngoro,subset = sex=="M")
+female.n.lm<-lm(prop.black~age,data=ngoro,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.n.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.n.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+```
+
+Como podemos ver, para un nivel de significación del 5%, machos y hembras de la región de Ngorongoro sí presentan diferencias significativas en la proporción de negro de la nariz, tal como concluían en el estudio original. 
+
+(c) **Otro resultado destacado es que para los machos hay diferencias según el área. Contrastar este resultado y dibujar las rectas de regresión para las dos áreas que se obtienen del modelo.**
+
+Para este contraste, seguiremos exactamente los mismos contrastes del apartado (b). Los modelos asociados a cada una de las rectas son:
+
+$$y_{1i}=\alpha_1+\beta_1x_{1i}+\epsilon_{1i}\;i=1,...n_1$$
+$$y_{2i}=\alpha_2+\beta_2x_{2i}+\epsilon_{2i}\;i=1,...n_2$$
+donde los errores $\epsilon_{1i}$ y $\epsilon_{1i}$ verifican todas las hipótesis de un modelo lineal normal. Entonces, se puede plantear el siguiente contraste:
+
+$$H_0:\beta_1=\beta_2$$
+$$H_1:\beta_1\neq\beta_2$$
+Para hacer este contraste, hay que considerar un modelo general único con el siguiente aspecto:
+
+$$
+\begin{pmatrix} 
+y_{11}\\ 
+\vdots \\
+y_{1n_1} \\
+y_{21}\\ 
+\vdots \\
+y_{2n_2} \\
+\end{pmatrix}
+=
+\begin{pmatrix} 
+1 & x_{11} & 0 & 0\\ 
+\vdots & \vdots & \vdots & \vdots \\
+1 & x_{1n_1} & 0 & 0\\
+0 & 0 & 1 & x_{21} \\ 
+\vdots & \vdots & \vdots & \vdots \\
+0 & 0&1 & x_{2n_2} \\
+\end{pmatrix}
+\begin{pmatrix} 
+\alpha_1\\ 
+\beta_1\\
+\alpha_2\\
+\beta_2\\
+\end{pmatrix}
++
+\begin{pmatrix} 
+\epsilon_{11}\\ 
+\vdots \\
+\epsilon_{1n_1} \\
+\epsilon_{21}\\ 
+\vdots \\
+\epsilon_{2n_2} \\
+\end{pmatrix}
+$$
+
+No obstante, si aceptamos la hipótesis nula, el modelo se simplifica de la manera siguiente:
+
+$$
+\begin{pmatrix} 
+y_{11}\\ 
+\vdots \\
+y_{1n_1} \\
+y_{21}\\ 
+\vdots \\
+y_{2n_2} \\
+\end{pmatrix}
+=
+\begin{pmatrix} 
+1 & x_{11} & 0 & 0\\ 
+\vdots & \vdots & \vdots & \vdots \\
+1 & x_{1n_1} & 0 & 0\\
+0 & 0 & 1 & x_{21} \\ 
+\vdots & \vdots & \vdots & \vdots \\
+0 & 0&1 & x_{2n_2} \\
+\end{pmatrix}
+\begin{pmatrix} 
+\alpha_1\\ 
+\alpha_2\\
+\beta\\
+\end{pmatrix}
++
+\begin{pmatrix} 
+\epsilon_{11}\\ 
+\vdots \\
+\epsilon_{1n_1} \\
+\epsilon_{21}\\ 
+\vdots \\
+\epsilon_{2n_2} \\
+\end{pmatrix}
+$$
+
+Es decir, si las rectas son paralelas, las pendientes serán iguales y, por tanto, ambas $\beta$ también serán iguales. 
+
+Tras ajustar ambos modelos, debemos hacer un test *F* para resolver el contraste:
+
+```{r, echo=FALSE}
+males<-subset(lions,sex=="M")
+
+n1<-sum(males$area=="S")
+n2<-sum(males$area=="N")
+y<-c(males$prop.black[males$area=="S"],males$prop.black[males$area=="N"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+sere.lm<-lm(prop.black~age,data=males,subset = area=="S")
+ngoro.lm<-lm(prop.black~age,data=males,subset = area=="N")
+x[1:n1,1:2]<-model.matrix(sere.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(ngoro.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+```
+
+Como podemos observar, hay diferencias significativas entre los leones de Serengeti y los leones de Ngorongoro. Para verlo gráficamente, podemos hacer la siguiente representación, dónde la línea contínua representa los leones de Serengeti y la línea discontínua representa los leones de Ngorongoro:
+
+```{r,echo=FALSE,fig.align='center',out.width="50%"}
+plot(males$prop.black ~ males$age, 
+     pch = ifelse(males$area == "S", 24, 2), 
+     col = ifelse(males$area == "S", "black", "black"),
+     bg = ifelse(males$area == "S", "black", "white"),
+     data = males, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti males (n=22)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(24,2), 
+       pt.bg = c("black", "white"), 
+       bty = "n")
+abline(sere.lm,lty=1)
+abline(ngoro.lm,lty=2)
+```
+
+(d) **En la tabla 1 del artículo de Whitman et al. se dan los intervalos de confianza al 95 %, al 75 % y al 50 % para predecir la edad de una leona de 10 años o menos según su proporción de pigmentación oscura en la nariz. La primera cuestión es: ¿sirven para esto los modelos estudiados en los apartados anteriores?**
+
+Los modelos estudiados en los apartados anteriores no sirven para hacer estas predicciones. Deberíamos generar un modelo en el que solo tuvieramos a las hembras de ambas regiones y, a partir de éste, hacer las predicciones.
+
+**Reproducir la fila de la tabla 1 para una proporción del 0.50 según el modelo que proponen en el artículo.**
+
+En el artículo especifican que el modelo usado es *least-squares regression of a truncated data ser for 63 known-aged females in the Serengeti and Ngorongoro aged $\leq$ 10 yr ($y=2.0667+5.9037\text{arcsin}(x)$)*.
+
+Es decir, debemos generar el modelo siguiente:
+
+$$age_i=\beta_0+\beta_1\text{arcsin}(prop.black_i)+\epsilon_i$$
+
+Una vez ajustamos el modelo y generamos las predicciones, obtenemos la tabla que se muestra a continuación, en la que tenemos la edad estimada (en años) y los distintos intervalos de predicción según el nivel de confianza (95, 75 y 50%, respectivamente):
+```{r,echo=FALSE}
+females<-subset(subset(lions,age<=10),sex=="F")
+females.lm<-lm(age~asin(sqrt(prop.black)),females)
+lion0<-data.frame(prop.black=0.5)
+PI95<-predict(females.lm,lion0,interval = "prediction",level=0.95)
+PI75<-predict(females.lm,lion0,interval = "prediction",level=0.75)
+PI50<-predict(females.lm,lion0,interval = "prediction",level=0.5)
+
+PI_df <- round(data.frame(
+  prop.black = 0.5,
+  age = PI95[1],
+  lower95 = PI95[2],
+  upper95 = PI95[3],
+  lower75 = PI75[2],
+  upper75 = PI75[3],
+  lower50 = PI50[2],
+  upper50 = PI50[3]
+),2)
+knitr::kable(PI_df)
+```
+
+**Aclarar un detalle: lo que en la tabla 1 del artículo se llama s.e., standard error ¿qué es exactamente?**
+
+El error estándar de la estimación de la edad es:
+
+$$Var(age)=Var(\beta_0+\text{arcsin}(prop.black)\beta_1)$$
+
+# Ejercicio 3
+
+(a) **Verificar las hipótesis de Gauss-Markov y la normalidad de los residuos del modelo completo del apartado (b) del ejercicio 2. Realizar una completa diagnosis del modelo para ver si se cumplen las condiciones del modelo de regresión: normalidad, homocedasticidad,... y estudiar la presencia de valores atípicos, de alto *leverage* y/o puntos influyentes.**
+
+Empezaremos estudiando si la varianza de los errores es constante. Para ello, representamos los valores absolutos de los residuos para ver la magnitud de la varianza:
+
+```{r,echo=FALSE, out.width="50%",fig.align='center'}
+plot(fitted(general.complete.lm),abs(residuals(general.complete.lm)),xlab="Predicted values",ylab="|Residuals|")
+```
+
+La forma del gráfico nos hace sospechar que no hay homocedasticidad en la varianza, ya que los residuos de los valores predichos pequeños son muy inferiores a los residuos de los valores predichos mayores. Para comprobarlo, también podemos ajustar una recta a las raíces cuadradas de los valores absolutos de los residuos y los valores predichos. El resumen de dicho ajuste es el siguiente:
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+require(faraway)
+sumary(lm(sqrt(abs(residuals(general.complete.lm)))~fitted(general.complete.lm)))
+```
+
+El *p*-valor de la pendiente obtenido es estadísticamente significativo para un nivel de significación del 5%. Por tanto, confirmamos las sospechas de la falta de homocedasticidad.
+
+A continuación, estudiaremos la asunción de normalidad. Para ello haremos un qqplot:
+
+```{r,echo=FALSE,fig.align='center',out.width="50%"}
+qqnorm(residuals(general.complete.lm),ylab="Residuals")
+qqline(residuals(general.complete.lm))
+```
+
+No vemos que la distribución de los residuos se aparte mucho de la normalidad. Además, podemos hacer el test de Shapiro-Wilk para ver si hay una desviación de la normalidad significativa:
+
+```{r,echo=FALSE}
+shapiro.test(residuals(general.complete.lm))
+```
+
+Aceptamos, por tanto, la hipótesis de normalidad.
+
+A continuación, buscaremos los puntos con alto *leverage*. El valor medio de los *leverages* es $p/n$ (siendo *p* el número de parámetros y *n* el número de observaciones) y como referencia podemos considerar anómalas las observaciones con *leverages* del doble de este valor (representado con una línea horizontal roja en el gráfico). A continuación, mostramos un gráfico donde podemos visualizar si hay valores por encima del umbral que hemos determinado, es decir, si hay valores con elevado *leverage*. Para identificar los valores más grandes, también podemos representar los *leverages* contra los cuantiles de una distribución seminormal (como se muestra a la derecha).
+
+```{r,echo=FALSE,fig.align='center',out.height="50%"}
+par(mfrow=c(1,2))
+hatv<-hatvalues(general.complete.lm)
+p<-length(general.complete.lm$coefficients)
+n<-length(general.complete.lm$fitted.values)
+leverage.mean<-p/n
+#which(hatv>2*leverage.mean)
+plot(hatv,type="h")
+abline(h=2*leverage.mean,col="red")
+halfnorm(hatv,nlab = 3,ylab="Leverage")
+```
+
+Como vemos en el gráfico de la izquierda, sí que hay observaciones con un elevado *leverage*. En el gráfico de la derecha podemos ver que la observación del león 103 tiene un *leverage* unusualmente muy elevado, seguido de los leones 61 y 104. 
+
+Seguidamente, buscamos los *outliers* que pueda haber.
 
 \pagebreak
 
@@ -280,7 +657,153 @@ legend("bottomright",
        pch = c(21,24,1,2), 
        pt.bg = c("black","black","white", "white"), 
        bty = "n")
+# Generamos el gráfico con las rectas según el sexo
+male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
+female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
+plot(lions$prop.black ~ lions$age, 
+     pch = ifelse(lions$sex == "F", ifelse(lions$area == "S", 21, 1), 
+                  ifelse(lions$area == "S", 24, 2)), 
+     col = ifelse(lions$area == "S", "black", "black"),
+     bg = ifelse(lions$area == "S", "black", "white"),
+     data = lions, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti females (n=62)", 
+                  "Serengeti males (n=22)",
+                  "Ngorongoro females (n=11)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(21,24,1,2), 
+       pt.bg = c("black","black","white", "white"), 
+       bty = "n")
 
+abline(male.lm,lty=1)
+abline(female.lm,lty=2)
 
+# Contraste sin tener en cuenta el área
+attach(lions)
+n1<-sum(sex=="F")
+n2<-sum(sex=="M")
+y<-c(prop.black[sex=="F"],prop.black[sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.lm<-lm(prop.black~age,data=lions,subset = sex=="M")
+female.lm<-lm(prop.black~age,data=lions,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+
+# Contraste para Serengeti
+serengeti<-subset(lions,area=="S")
+
+n1<-sum(serengeti$sex=="F")
+n2<-sum(serengeti$sex=="M")
+y<-c(serengeti$prop.black[serengeti$sex=="F"],serengeti$prop.black[serengeti$sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.s.lm<-lm(prop.black~age,data=serengeti,subset = sex=="M")
+female.s.lm<-lm(prop.black~age,data=serengeti,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.s.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.s.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+
+# Contraste para Ngorongoro
+ngoro<-subset(lions,area=="N")
+
+n1<-sum(ngoro$sex=="F")
+n2<-sum(ngoro$sex=="M")
+y<-c(ngoro$prop.black[ngoro$sex=="F"],ngoro$prop.black[ngoro$sex=="M"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+male.n.lm<-lm(prop.black~age,data=ngoro,subset = sex=="M")
+female.n.lm<-lm(prop.black~age,data=ngoro,subset = sex=="F")
+x[1:n1,1:2]<-model.matrix(female.n.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(male.n.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+
+# Contraste para machos
+males<-subset(lions,sex=="M")
+
+n1<-sum(males$area=="S")
+n2<-sum(males$area=="N")
+y<-c(males$prop.black[males$area=="S"],males$prop.black[males$area=="N"])
+x<-matrix(numeric(4*(n1+n2)),ncol=4)
+sere.lm<-lm(prop.black~age,data=males,subset = area=="S")
+ngoro.lm<-lm(prop.black~age,data=males,subset = area=="N")
+x[1:n1,1:2]<-model.matrix(sere.lm)
+x[(n1+1):(n1+n2),3:4]<-model.matrix(ngoro.lm)
+general.lm<-lm(y~0+x)
+
+x0<-matrix(numeric(3*(n1+n2)),ncol=3)
+x0[,1]<-x[,1]
+x0[,2]<-x[,3]
+x0[,3]<-x[,2]+x[,4]
+h0.lm<-lm(y~0+x0)
+
+anova(h0.lm,general.lm)
+
+# Representación de los machos según área
+plot(males$prop.black ~ males$age, 
+     pch = ifelse(males$area == "S", 24, 2), 
+     col = ifelse(males$area == "S", "black", "black"),
+     bg = ifelse(males$area == "S", "black", "white"),
+     data = males, 
+     ylab = "Proportion black", 
+     xlab = "Age (yr)", 
+     ylim = c(0,1), 
+     xlim = c(0,16))
+legend("bottomright", 
+       legend = c("Serengeti males (n=22)",
+                  "Ngorongoro males (n=10)"), 
+       col = c(rep("black",4)), 
+       pch = c(24,2), 
+       pt.bg = c("black", "white"), 
+       bty = "n")
+abline(sere.lm,lty=1)
+abline(ngoro.lm,lty=2)
+
+# Modelo para las predicciones de las hembras
+females<-subset(subset(lions,age<=10),sex=="F")
+females.lm<-lm(age~asin(sqrt(prop.black)),females)
+lion0<-data.frame(prop.black=0.5)
+PI95<-predict(females.lm,lion0,interval = "prediction",level=0.95)
+PI75<-predict(females.lm,lion0,interval = "prediction",level=0.75)
+PI50<-predict(females.lm,lion0,interval = "prediction",level=0.5)
+
+PI_df <- round(data.frame(
+  prop.black = 0.5,
+  age = PI95[1],
+  lower95 = PI95[2],
+  upper95 = PI95[3],
+  lower75 = PI75[2],
+  upper75 = PI75[3],
+  lower50 = PI50[2],
+  upper50 = PI50[3]
+),2)
+knitr::kable(PI_df)
 ```
 
